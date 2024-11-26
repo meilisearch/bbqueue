@@ -6,7 +6,7 @@ use core::{
     cell::UnsafeCell,
     cmp::min,
     marker::PhantomData,
-    mem::{forget, transmute, MaybeUninit},
+    mem::{forget, transmute},
     ops::{Deref, DerefMut},
     ptr::NonNull,
     result::Result as CoreResult,
@@ -21,7 +21,7 @@ use core::{
 /// A backing structure for a BBQueue. Can be used to create either
 /// a BBQueue or a split Producer/Consumer pair
 pub struct BBBuffer {
-    buf: UnsafeCell<Box<[u8]>>,
+    buf: Box<UnsafeCell<[u8]>>,
 
     /// Where the next byte will be written
     write: AtomicUsize,
@@ -248,15 +248,12 @@ impl BBBuffer {
     /// }
     /// ```
     pub fn new(cap: usize) -> Self {
-        let mut slice = Box::new_uninit_slice(cap);
-        let slice: Box<[u8]> = unsafe {
-            slice.iter_mut().for_each(|mu| *mu = MaybeUninit::zeroed());
-            slice.assume_init()
-        };
-
         Self {
-            // This will not be initialized until we split the buffer
-            buf: UnsafeCell::new(slice),
+            buf: unsafe {
+                std::mem::transmute::<Box<[u8]>, Box<UnsafeCell<[u8]>>>(
+                    vec![0; cap].into_boxed_slice(),
+                )
+            },
 
             // Owned by the writer
             write: AtomicUsize::new(0),
