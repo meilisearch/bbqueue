@@ -83,16 +83,16 @@ use core::{
 };
 
 /// A producer of Framed data
-pub struct FrameProducer<'a, const N: usize> {
-    pub(crate) producer: Producer<'a, N>,
+pub struct FrameProducer<'a> {
+    pub(crate) producer: Producer<'a>,
 }
 
-impl<'a, const N: usize> FrameProducer<'a, N> {
+impl<'a> FrameProducer<'a> {
     /// Receive a grant for a frame with a maximum size of `max_sz` in bytes.
     ///
     /// This size does not include the size of the frame header. The exact size
     /// of the frame can be set on `commit`.
-    pub fn grant(&mut self, max_sz: usize) -> Result<FrameGrantW<'a, N>> {
+    pub fn grant(&mut self, max_sz: usize) -> Result<FrameGrantW<'a>> {
         let hdr_len = encoded_len(max_sz);
         Ok(FrameGrantW {
             grant_w: self.producer.grant_exact(max_sz + hdr_len)?,
@@ -102,13 +102,13 @@ impl<'a, const N: usize> FrameProducer<'a, N> {
 }
 
 /// A consumer of Framed data
-pub struct FrameConsumer<'a, const N: usize> {
-    pub(crate) consumer: Consumer<'a, N>,
+pub struct FrameConsumer<'a> {
+    pub(crate) consumer: Consumer<'a>,
 }
 
-impl<'a, const N: usize> FrameConsumer<'a, N> {
+impl<'a> FrameConsumer<'a> {
     /// Obtain the next available frame, if any
-    pub fn read(&mut self) -> Option<FrameGrantR<'a, N>> {
+    pub fn read(&mut self) -> Option<FrameGrantR<'a>> {
         // Get all available bytes. We never wrap a frame around,
         // so if a header is available, the whole frame will be.
         let mut grant_r = self.consumer.read().ok()?;
@@ -140,8 +140,8 @@ impl<'a, const N: usize> FrameConsumer<'a, N> {
 /// the contents without first calling `to_commit()`, then no
 /// frame will be comitted for writing.
 #[derive(Debug, PartialEq)]
-pub struct FrameGrantW<'a, const N: usize> {
-    grant_w: GrantW<'a, N>,
+pub struct FrameGrantW<'a> {
+    grant_w: GrantW<'a>,
     hdr_len: u8,
 }
 
@@ -150,12 +150,12 @@ pub struct FrameGrantW<'a, const N: usize> {
 /// NOTE: If the grant is dropped without explicitly releasing
 /// the contents, then no frame will be released.
 #[derive(Debug, PartialEq)]
-pub struct FrameGrantR<'a, const N: usize> {
-    grant_r: GrantR<'a, N>,
+pub struct FrameGrantR<'a> {
+    grant_r: GrantR<'a>,
     hdr_len: u8,
 }
 
-impl<'a, const N: usize> Deref for FrameGrantW<'a, N> {
+impl<'a> Deref for FrameGrantW<'a> {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
@@ -163,13 +163,13 @@ impl<'a, const N: usize> Deref for FrameGrantW<'a, N> {
     }
 }
 
-impl<'a, const N: usize> DerefMut for FrameGrantW<'a, N> {
+impl<'a> DerefMut for FrameGrantW<'a> {
     fn deref_mut(&mut self) -> &mut [u8] {
         &mut self.grant_w.buf[self.hdr_len.into()..]
     }
 }
 
-impl<'a, const N: usize> Deref for FrameGrantR<'a, N> {
+impl<'a> Deref for FrameGrantR<'a> {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
@@ -177,13 +177,13 @@ impl<'a, const N: usize> Deref for FrameGrantR<'a, N> {
     }
 }
 
-impl<'a, const N: usize> DerefMut for FrameGrantR<'a, N> {
+impl<'a> DerefMut for FrameGrantR<'a> {
     fn deref_mut(&mut self) -> &mut [u8] {
         &mut self.grant_r.buf[self.hdr_len.into()..]
     }
 }
 
-impl<'a, const N: usize> FrameGrantW<'a, N> {
+impl<'a> FrameGrantW<'a> {
     /// Commit a frame to make it available to the Consumer half.
     ///
     /// `used` is the size of the payload, in bytes, not
@@ -220,7 +220,7 @@ impl<'a, const N: usize> FrameGrantW<'a, N> {
     }
 }
 
-impl<'a, const N: usize> FrameGrantR<'a, N> {
+impl<'a> FrameGrantR<'a> {
     /// Release a frame to make the space available for future writing
     ///
     /// Note: The full frame is always released

@@ -48,7 +48,8 @@ mod tests {
         #[cfg(feature = "verbose")]
         println!("RTX: Running test...");
 
-        static BB: BBBuffer<QUEUE_SIZE> = BBBuffer::new();
+        static BB: std::sync::LazyLock<BBBuffer> =
+            std::sync::LazyLock::new(|| BBBuffer::new(QUEUE_SIZE));
         let (mut tx, mut rx) = BB.try_split().unwrap();
 
         let mut last_tx = Instant::now();
@@ -140,7 +141,8 @@ mod tests {
 
     #[test]
     fn sanity_check() {
-        static BB: BBBuffer<QUEUE_SIZE> = BBBuffer::new();
+        static BB: std::sync::LazyLock<BBBuffer> =
+            std::sync::LazyLock::new(|| BBBuffer::new(QUEUE_SIZE));
         let (mut tx, mut rx) = BB.try_split().unwrap();
 
         let mut last_tx = Instant::now();
@@ -234,7 +236,8 @@ mod tests {
 
     #[test]
     fn sanity_check_grant_max() {
-        static BB: BBBuffer<QUEUE_SIZE> = BBBuffer::new();
+        static BB: std::sync::LazyLock<BBBuffer> =
+            std::sync::LazyLock::new(|| BBBuffer::new(QUEUE_SIZE));
         let (mut tx, mut rx) = BB.try_split().unwrap();
 
         #[cfg(feature = "verbose")]

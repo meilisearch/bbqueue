@@ -11,7 +11,6 @@ bounded-spsc-queue = { version = "0.4.0", optional = true }
 [dependencies.bbqueue]
 path = "../core"
 
-
 [dev-dependencies]
 rand = "0.8"
 criterion = "0.5"

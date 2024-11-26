@@ -17,7 +17,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     c.bench_function("bbq 2048/4096", |bench| bench.iter(|| chunky(&data, 2048)));
 
-    let buffy: BBBuffer<65536> = BBBuffer::new();
+    let buffy: BBBuffer = BBBuffer::new(65536);
     let (mut prod, mut cons) = buffy.try_split().unwrap();
 
     c.bench_function("bbq 8192/65536", |bench| {
@@ -63,7 +63,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("std channels 8192 unbounded", |bench| {
         bench.iter(|| {
             use std::sync::mpsc::{Receiver, Sender};
-            let (mut prod, mut cons): (Sender<[u8; 8192]>, Receiver<[u8; 8192]>) =
+            let (prod, cons): (Sender<[u8; 8192]>, Receiver<[u8; 8192]>) =
                 std::sync::mpsc::channel();
             let rdata = &data;
 
@@ -92,9 +92,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     c.bench_function("xbeam channels 8192/65536", |bench| {
         bench.iter(|| {
-            use crossbeam::{bounded, Receiver, Sender};
-            let (mut prod, mut cons): (Sender<[u8; 8192]>, Receiver<[u8; 8192]>) =
-                bounded(65536 / 8192);
+            use crossbeam::channel::{bounded, Receiver, Sender};
+            let (prod, cons): (Sender<[u8; 8192]>, Receiver<[u8; 8192]>) = bounded(65536 / 8192);
             let rdata = &data;
 
             thread::scope(|sc| {
@@ -196,11 +195,11 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
 use crossbeam_utils::thread;
 fn chunky(data: &[u8], chunksz: usize) {
-    let buffy: BBBuffer<4096> = BBBuffer::new();
+    let buffy: BBBuffer = BBBuffer::new(4096);
     let (mut prod, mut cons) = buffy.try_split().unwrap();
 
     thread::scope(|sc| {
-        let pjh = sc.spawn(|_| {
+        let _pjh = sc.spawn(|_| {
             data.chunks(chunksz).for_each(|ch| loop {
                 if let Ok(mut wgr) = prod.grant_exact(chunksz) {
                     wgr.copy_from_slice(ch);
@@ -210,7 +209,7 @@ fn chunky(data: &[u8], chunksz: usize) {
             });
         });
 
-        let cjh = sc.spawn(|_| {
+        let _cjh = sc.spawn(|_| {
             data.chunks(chunksz).for_each(|ch| {
                 let mut st = 0;
                 loop {
