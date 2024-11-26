@@ -23,6 +23,11 @@ use core::{
 pub struct BBBuffer {
     buf: Box<UnsafeCell<[u8]>>,
 
+    /// The size of the bbbuffer.
+    /// We prefer to use this one than the one from
+    /// the Box as the Box is accessed concurrently.
+    capacity: usize,
+
     /// Where the next byte will be written
     write: AtomicUsize,
 
@@ -254,6 +259,8 @@ impl BBBuffer {
                     vec![0; cap].into_boxed_slice(),
                 )
             },
+
+            capacity: cap,
 
             // Owned by the writer
             write: AtomicUsize::new(0),
@@ -682,8 +689,8 @@ impl BBBuffer {
     /// # bbqtest();
     /// # }
     /// ```
-    pub fn capacity(&self) -> usize {
-        unsafe { self.buf.get().as_ref().unwrap().len() }
+    pub const fn capacity(&self) -> usize {
+        self.capacity
     }
 }
 
