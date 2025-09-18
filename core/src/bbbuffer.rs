@@ -307,15 +307,15 @@ impl BBBuffer {
 /// * `grant_exact(N)`
 ///   * User will receive a grant `sz == N` (or receive an error)
 ///   * This may cause a wraparound if a grant of size N is not available
-///       at the end of the ring.
+///     at the end of the ring.
 ///   * If this grant caused a wraparound, the bytes that were "skipped" at the
-///       end of the ring will not be available until the reader reaches them,
-///       regardless of whether the grant commited any data or not.
+///     end of the ring will not be available until the reader reaches them,
+///     regardless of whether the grant commited any data or not.
 ///   * Maximum possible waste due to skipping: `N - 1` bytes
 /// * `grant_max_remaining(N)`
 ///   * User will receive a grant `0 < sz <= N` (or receive an error)
 ///   * This will only cause a wrap to the beginning of the ring if exactly
-///       zero bytes are available at the end of the ring.
+///     zero bytes are available at the end of the ring.
 ///   * Maximum possible waste due to skipping: 0 bytes
 ///
 /// See [this github issue](https://github.com/jamesmunns/bbqueue/issues/38) for a
